@@ -23,34 +23,36 @@ const ControlPanel: React.FC<ControlPanelProps> = ({
   lastUpdated
 }) => {
   return (
-    <Card className="mb-6">
-      <CardContent className="p-4">
-        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-4">
-          <h2 className="text-lg font-medium">Pricing Controls</h2>
+    <Card className="mb-4 sm:mb-6">
+      <CardContent className="p-3 sm:p-4">
+        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2 sm:gap-4 mb-3 sm:mb-4">
+          <h2 className="text-base sm:text-lg font-medium">Pricing Controls</h2>
           
           {lastUpdated && (
-            <div className="flex items-center text-sm">
-              <span className="inline-block w-2 h-2 rounded-full bg-success mr-2"></span>
-              <span>Data updated: {formatTimestamp(lastUpdated)}</span>
+            <div className="flex items-center text-xs sm:text-sm bg-success/10 rounded-full px-2 py-1 sm:bg-transparent sm:px-0 sm:py-0">
+              <span className="inline-block w-2 h-2 rounded-full bg-success mr-1 sm:mr-2"></span>
+              <span>Updated: {formatTimestamp(lastUpdated)}</span>
             </div>
           )}
         </div>
         
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+        {/* More responsive grid - single column on mobile, multiple on larger screens */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4">
           {/* Date Picker */}
           <div className="flex flex-col">
-            <Label htmlFor="date-picker" className="mb-1 text-sm font-medium text-neutral-dark">
+            <Label htmlFor="date-picker" className="mb-1 text-xs sm:text-sm font-medium text-neutral-dark">
               Select Date
             </Label>
             <DatePicker 
               date={date} 
               onDateChange={onDateChange} 
+              className="w-full"
             />
           </div>
           
-          {/* Peak Period Toggle */}
+          {/* Peak Period Toggle - stacked on mobile, side by side on desktop */}
           <div className="flex flex-col">
-            <Label htmlFor="toggle-peak-periods" className="mb-1 text-sm font-medium text-neutral-dark">
+            <Label htmlFor="toggle-peak-periods" className="mb-1 text-xs sm:text-sm font-medium text-neutral-dark">
               Display Options
             </Label>
             <div className="flex items-center space-x-2">
@@ -59,17 +61,17 @@ const ControlPanel: React.FC<ControlPanelProps> = ({
                 checked={showPeakPeriods}
                 onCheckedChange={onTogglePeakPeriods}
               />
-              <span className="text-sm">Highlight Peak/Off-Peak Periods</span>
+              <span className="text-xs sm:text-sm">Highlight Peak/Off-Peak Periods</span>
             </div>
           </div>
           
           {/* Rate Plan Information */}
           <div className="flex flex-col">
-            <Label className="mb-1 text-sm font-medium text-neutral-dark">
+            <Label className="mb-1 text-xs sm:text-sm font-medium text-neutral-dark">
               Rate Plan
             </Label>
             <div className="flex items-center space-x-2">
-              <span className="bg-primary/10 text-primary px-3 py-1 rounded-full text-sm font-medium">
+              <span className="bg-primary/10 text-primary px-2 py-1 sm:px-3 rounded-full text-xs sm:text-sm font-medium">
                 EV2A-S
               </span>
               <TooltipProvider>
@@ -79,7 +81,7 @@ const ControlPanel: React.FC<ControlPanelProps> = ({
                   </TooltipTrigger>
                   <TooltipContent className="w-64 p-2">
                     <p className="font-medium mb-1">Peninsula Clean Energy EV2A-S</p>
-                    <p className="text-sm text-muted-foreground">
+                    <p className="text-xs sm:text-sm text-muted-foreground">
                       Time-of-use rate plan designed for electric vehicle owners
                     </p>
                   </TooltipContent>

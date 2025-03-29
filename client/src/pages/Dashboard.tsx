@@ -81,7 +81,7 @@ const Dashboard: React.FC = () => {
   };
 
   return (
-    <div className="container mx-auto px-4 py-6 max-w-6xl">
+    <div className="container mx-auto px-2 sm:px-4 py-4 sm:py-6 max-w-6xl">
       {/* Header */}
       <Header />
 
@@ -96,17 +96,18 @@ const Dashboard: React.FC = () => {
           lastUpdated={priceData && priceData.length > 0 ? new Date() : null}
         />
 
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          {/* Chart Section */}
-          <div className="lg:col-span-2">
+        {/* Responsive Layout - stacked on mobile, side-by-side on larger screens */}
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-6">
+          {/* Chart Section - full width on mobile, 2/3 width on desktop */}
+          <div className="lg:col-span-2 order-1">
             <PriceChart
               priceData={priceData || []}
               showPeakPeriods={showPeakPeriods}
             />
           </div>
 
-          {/* Summary Cards */}
-          <div className="space-y-6">
+          {/* Summary Cards - show in a row on mobile for small items */}
+          <div className="space-y-4 sm:space-y-6 order-2">
             <PricingSummary summary={pricingSummary} />
             <UsageTips priceData={priceData || []} />
           </div>
