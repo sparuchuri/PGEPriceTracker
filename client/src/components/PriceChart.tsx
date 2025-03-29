@@ -50,82 +50,25 @@ const PriceChart: React.FC<PriceChartProps> = ({ priceData, showPeakPeriods }) =
         isPeakHour(hour) ? 'rgba(255, 152, 0, 0.2)' : 'rgba(25, 118, 210, 0.1)'
       );
 
-      // Segment data points by price thresholds for multi-colored line
-      const segments = [];
-      let currentSegment: { startIndex: number; color: string } | null = null;
-
-      prices.forEach((price, index) => {
-        const color = getLineColor(price);
-        
-        if (!currentSegment || currentSegment.color !== color) {
-          if (currentSegment) {
-            segments.push({
-              ...currentSegment,
-              endIndex: index - 1
-            });
-          }
-          currentSegment = { startIndex: index, color };
-        }
-      });
-
-      // Add the last segment
-      if (currentSegment) {
-        segments.push({
-          ...currentSegment,
-          endIndex: prices.length - 1
-        });
-      }
-      
       const ctx = chartRef.current.getContext('2d');
       
       if (ctx) {
-        // Create datasets for each segment to create multi-colored line
+        // Create datasets for main data points
         const datasets = [
-          // Main dataset with points but transparent line
           {
-            label: 'Peninsula Clean Energy (PCE) - EV2A Rate',
+            label: 'Peninsula Clean Energy (PCE) - EV2A Rate - Circuit ID: 013921103',
             data: prices,
-            borderColor: 'transparent',
+            borderColor: 'rgba(0, 0, 0, 0.5)', // Base color for the line
             backgroundColor: showPeakPeriods ? backgroundColors : 'hsla(var(--primary), 0.1)',
-            borderWidth: 2,
-            tension: 0.2,
-            pointBackgroundColor: (context: any) => {
-              const index = context.dataIndex;
-              const price = prices[index];
-              return getLineColor(price);
-            },
-            pointRadius: 4,
-            pointHoverRadius: 6,
-            pointBorderColor: 'white',
-            pointBorderWidth: 1,
-            order: 1 // To ensure points are drawn on top
-          }
-        ];
-
-        // Add colored line segments
-        segments.forEach((segment, i) => {
-          const segmentData = Array(prices.length).fill(null);
-          
-          // Only fill in data for this segment's range
-          for (let i = segment.startIndex; i <= segment.endIndex; i++) {
-            segmentData[i] = prices[i];
-          }
-          
-          datasets.push({
-            label: `Price Range ${i+1}`,
-            data: segmentData,
-            borderColor: segment.color,
-            backgroundColor: 'transparent',
             borderWidth: 3,
             tension: 0.2,
-            pointRadius: 0,
-            pointHoverRadius: 0,
-            fill: false,
-            order: 2, // To ensure lines are drawn below points
-            // Hide this dataset from the legend
-            hidden: false
-          });
-        });
+            pointRadius: 5,
+            pointHoverRadius: 7,
+            pointBackgroundColor: prices.map(price => getLineColor(price)),
+            pointBorderColor: 'white',
+            pointBorderWidth: 1
+          }
+        ];
 
         // Create chart
         chartInstance.current = new Chart(ctx, {
@@ -217,8 +160,8 @@ const PriceChart: React.FC<PriceChartProps> = ({ priceData, showPeakPeriods }) =
   return (
     <Card className="h-full">
       <CardContent className="p-4">
-        <h2 className="text-xl font-semibold mb-4">Peninsula Clean Energy - EV2A Rate</h2>
-        <h3 className="text-lg font-medium mb-4">Hourly Electricity Pricing</h3>
+        <h2 className="text-xl font-semibold mb-2">Peninsula Clean Energy - EV2A Rate</h2>
+        <h3 className="text-lg font-medium mb-4">Circuit ID: 013921103 - Hourly Pricing</h3>
         
         {/* Chart Container */}
         <div className="h-80 relative">
