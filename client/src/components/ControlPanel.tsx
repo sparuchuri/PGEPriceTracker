@@ -87,9 +87,24 @@ const ControlPanel: React.FC<ControlPanelProps> = ({
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="EV2A">EV2A (Standard)</SelectItem>
-                  <SelectItem value="EV2A-S">EV2A-S (Smart Rate)</SelectItem>
-                  <SelectItem value="E-TOU-C">E-TOU-C (Time of Use)</SelectItem>
-                  <SelectItem value="E-TOU-D">E-TOU-D (Peak Pricing)</SelectItem>
+                  <SelectItem value="AG-A1">AG-A1</SelectItem>
+                  <SelectItem value="AG-A2">AG-A2</SelectItem>
+                  <SelectItem value="AGBP">AGBP</SelectItem>
+                  <SelectItem value="AGBS">AGBS</SelectItem>
+                  <SelectItem value="AGCP">AGCP</SelectItem>
+                  <SelectItem value="AGCS">AGCS</SelectItem>
+                  <SelectItem value="B6">B6</SelectItem>
+                  <SelectItem value="B10P">B10P</SelectItem>
+                  <SelectItem value="B10S">B10S</SelectItem>
+                  <SelectItem value="B19P">B19P</SelectItem>
+                  <SelectItem value="B19S">B19S</SelectItem>
+                  <SelectItem value="B20P">B20P</SelectItem>
+                  <SelectItem value="B20S">B20S</SelectItem>
+                  <SelectItem value="EELEC">EELEC</SelectItem>
+                  <SelectItem value="BEV1">BEV1</SelectItem>
+                  <SelectItem value="BEV2P">BEV2P</SelectItem>
+                  <SelectItem value="BEV2S">BEV2S</SelectItem>
+                  <SelectItem value="EV2AS">EV2AS</SelectItem>
                 </SelectContent>
               </Select>
               <TooltipProvider>
@@ -97,10 +112,12 @@ const ControlPanel: React.FC<ControlPanelProps> = ({
                   <TooltipTrigger>
                     <HelpCircle className="h-4 w-4 text-muted-foreground" />
                   </TooltipTrigger>
-                  <TooltipContent className="w-64 p-2">
+                  <TooltipContent className="w-80 p-2">
                     <p className="font-medium mb-1">Rate Plan Options</p>
                     <p className="text-xs sm:text-sm text-muted-foreground">
-                      Select your Peninsula Clean Energy rate plan to see accurate pricing data
+                      Select your Peninsula Clean Energy rate plan to see accurate pricing data. 
+                      Plans include residential (EV2A, EV2AS, BEV1, BEV2P/S), agricultural (AG-A1/2, AGBP/S, AGCP/S), 
+                      and business (B6, B10P/S, B19P/S, B20P/S, EELEC) rate options.
                     </p>
                   </TooltipContent>
                 </Tooltip>
