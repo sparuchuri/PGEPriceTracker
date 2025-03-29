@@ -7,6 +7,8 @@ import { formatPrice, isPeakHour, getPriceColor, LOW_PRICE_THRESHOLD, HIGH_PRICE
 interface PriceChartProps {
   priceData: HourlyPriceResponse[];
   showPeakPeriods: boolean;
+  ratePlan?: string;
+  circuitId?: string;
 }
 
 // This plugin will draw colored line segments
@@ -48,7 +50,12 @@ const createColoredSegmentPlugin = (prices: number[]) => {
   };
 };
 
-const PriceChart: React.FC<PriceChartProps> = ({ priceData, showPeakPeriods }) => {
+const PriceChart: React.FC<PriceChartProps> = ({ 
+  priceData, 
+  showPeakPeriods, 
+  ratePlan = "EV2A", 
+  circuitId = "013532223" 
+}) => {
   const chartRef = useRef<HTMLCanvasElement>(null);
   const chartInstance = useRef<Chart | null>(null);
 
@@ -73,7 +80,7 @@ const PriceChart: React.FC<PriceChartProps> = ({ priceData, showPeakPeriods }) =
         // Create a single dataset for the points
         const datasets = [
           {
-            label: 'Peninsula Clean Energy (PCE) - EV2A Rate - Circuit ID: 013921103',
+            label: `Peninsula Clean Energy (PCE) - ${ratePlan} Rate - Circuit ID: ${circuitId}`,
             data: prices,
             // Use a very light line that will be visually replaced by our custom plugin
             borderColor: 'rgba(200, 200, 200, 0.2)',
@@ -214,14 +221,14 @@ const PriceChart: React.FC<PriceChartProps> = ({ priceData, showPeakPeriods }) =
         chartInstance.current = null;
       }
     };
-  }, [priceData, showPeakPeriods]);
+  }, [priceData, showPeakPeriods, ratePlan, circuitId]);
 
   return (
     <Card className="h-full">
       <CardContent className="p-3 sm:p-4">
         {/* Responsive title with circuit ID on second line for mobile */}
-        <h2 className="text-base sm:text-xl font-semibold mb-1 sm:mb-2 leading-tight">Peninsula Clean Energy - EV2A Rate</h2>
-        <h3 className="text-sm sm:text-lg font-medium mb-3 sm:mb-4 text-muted-foreground leading-tight">Circuit ID: 013921103 - Hourly Pricing</h3>
+        <h2 className="text-base sm:text-xl font-semibold mb-1 sm:mb-2 leading-tight">Peninsula Clean Energy - {ratePlan} Rate</h2>
+        <h3 className="text-sm sm:text-lg font-medium mb-3 sm:mb-4 text-muted-foreground leading-tight">Circuit ID: {circuitId} - Hourly Pricing</h3>
         
         {/* Chart Container - adjust height for different screen sizes */}
         <div className="h-64 sm:h-72 md:h-80 relative">

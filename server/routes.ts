@@ -2,7 +2,7 @@ import type { Express, Request, Response } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
 import { fetchPricingData, calculatePricingSummary } from "./api";
-import { hourlyPricesResponseSchema, pricingSummarySchema } from "@shared/schema";
+import { hourlyPricesResponseSchema, pricingSummarySchema, gridXParametersSchema } from "@shared/schema";
 import { z } from "zod";
 
 export async function registerRoutes(app: Express): Promise<Server> {
@@ -12,21 +12,32 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get("/api/pricing", async (req: Request, res: Response) => {
     try {
       // Parse and validate query parameters
-      const dateSchema = z.object({
+      const paramsSchema = gridXParametersSchema.extend({
         date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, "Date must be in YYYY-MM-DD format")
       });
       
-      const { date } = dateSchema.parse(req.query);
+      // Convert query parameters to string type to match schema
+      const queryParams = {
+        date: req.query.date as string,
+        rateName: req.query.rateName as string,
+        representativeCircuitId: req.query.representativeCircuitId as string,
+        cca: req.query.cca as string
+      };
+      
+      // Parse and validate parameters with defaults
+      const params = paramsSchema.parse(queryParams);
       
       // Fetch pricing data from GridX API
-      const pricingData = await fetchPricingData(date);
+      const pricingData = await fetchPricingData(params);
       
       res.json(pricingData);
     } catch (error) {
       console.error("Error fetching pricing data:", error);
       
       if (error instanceof z.ZodError) {
-        return res.status(400).json({ message: "Invalid request parameters. Date must be in YYYY-MM-DD format." });
+        return res.status(400).json({ 
+          message: "Invalid request parameters. Date must be in YYYY-MM-DD format. Optional parameters include rateName, representativeCircuitId, and cca."
+        });
       }
       
       if (error instanceof Error) {
@@ -41,14 +52,23 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get("/api/pricing/summary", async (req: Request, res: Response) => {
     try {
       // Parse and validate query parameters
-      const dateSchema = z.object({
+      const paramsSchema = gridXParametersSchema.extend({
         date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, "Date must be in YYYY-MM-DD format")
       });
       
-      const { date } = dateSchema.parse(req.query);
+      // Convert query parameters to string type to match schema
+      const queryParams = {
+        date: req.query.date as string,
+        rateName: req.query.rateName as string,
+        representativeCircuitId: req.query.representativeCircuitId as string,
+        cca: req.query.cca as string
+      };
+      
+      // Parse and validate parameters with defaults
+      const params = paramsSchema.parse(queryParams);
       
       // Fetch pricing data from GridX API
-      const pricingData = await fetchPricingData(date);
+      const pricingData = await fetchPricingData(params);
       
       // Calculate summary statistics
       const summary = calculatePricingSummary(pricingData);
@@ -58,7 +78,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
       console.error("Error calculating pricing summary:", error);
       
       if (error instanceof z.ZodError) {
-        return res.status(400).json({ message: "Invalid request parameters. Date must be in YYYY-MM-DD format." });
+        return res.status(400).json({ 
+          message: "Invalid request parameters. Date must be in YYYY-MM-DD format. Optional parameters include rateName, representativeCircuitId, and cca."
+        });
       }
       
       if (error instanceof Error) {

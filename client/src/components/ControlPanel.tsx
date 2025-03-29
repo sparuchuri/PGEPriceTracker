@@ -6,6 +6,8 @@ import { Card, CardContent } from "@/components/ui/card";
 import { HelpCircle } from "lucide-react";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { formatDateForDisplay, formatTimestamp } from "@/lib/utils";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Input } from "@/components/ui/input";
 
 interface ControlPanelProps {
   date: Date;
@@ -13,6 +15,10 @@ interface ControlPanelProps {
   showPeakPeriods: boolean;
   onTogglePeakPeriods: (show: boolean) => void;
   lastUpdated: Date | null;
+  ratePlan: string;
+  onRatePlanChange: (plan: string) => void;
+  circuitId: string;
+  onCircuitIdChange: (id: string) => void;
 }
 
 const ControlPanel: React.FC<ControlPanelProps> = ({
@@ -20,7 +26,11 @@ const ControlPanel: React.FC<ControlPanelProps> = ({
   onDateChange,
   showPeakPeriods,
   onTogglePeakPeriods,
-  lastUpdated
+  lastUpdated,
+  ratePlan,
+  onRatePlanChange,
+  circuitId,
+  onCircuitIdChange
 }) => {
   return (
     <Card className="mb-4 sm:mb-6">
@@ -65,24 +75,61 @@ const ControlPanel: React.FC<ControlPanelProps> = ({
             </div>
           </div>
           
-          {/* Rate Plan Information */}
+          {/* Rate Plan Selector */}
           <div className="flex flex-col">
-            <Label className="mb-1 text-xs sm:text-sm font-medium text-neutral-dark">
+            <Label htmlFor="rate-plan" className="mb-1 text-xs sm:text-sm font-medium text-neutral-dark">
               Rate Plan
             </Label>
             <div className="flex items-center space-x-2">
-              <span className="bg-primary/10 text-primary px-2 py-1 sm:px-3 rounded-full text-xs sm:text-sm font-medium">
-                EV2A-S
-              </span>
+              <Select value={ratePlan} onValueChange={onRatePlanChange}>
+                <SelectTrigger id="rate-plan" className="w-full">
+                  <SelectValue placeholder="Select rate plan" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="EV2A">EV2A (Standard)</SelectItem>
+                  <SelectItem value="EV2A-S">EV2A-S (Smart Rate)</SelectItem>
+                  <SelectItem value="E-TOU-C">E-TOU-C (Time of Use)</SelectItem>
+                  <SelectItem value="E-TOU-D">E-TOU-D (Peak Pricing)</SelectItem>
+                </SelectContent>
+              </Select>
               <TooltipProvider>
                 <Tooltip>
                   <TooltipTrigger>
                     <HelpCircle className="h-4 w-4 text-muted-foreground" />
                   </TooltipTrigger>
                   <TooltipContent className="w-64 p-2">
-                    <p className="font-medium mb-1">Peninsula Clean Energy EV2A-S</p>
+                    <p className="font-medium mb-1">Rate Plan Options</p>
                     <p className="text-xs sm:text-sm text-muted-foreground">
-                      Time-of-use rate plan designed for electric vehicle owners
+                      Select your Peninsula Clean Energy rate plan to see accurate pricing data
+                    </p>
+                  </TooltipContent>
+                </Tooltip>
+              </TooltipProvider>
+            </div>
+          </div>
+          
+          {/* Circuit ID Input */}
+          <div className="flex flex-col">
+            <Label htmlFor="circuit-id" className="mb-1 text-xs sm:text-sm font-medium text-neutral-dark">
+              Circuit ID
+            </Label>
+            <div className="flex items-center space-x-2">
+              <Input 
+                id="circuit-id"
+                value={circuitId}
+                onChange={(e) => onCircuitIdChange(e.target.value)}
+                placeholder="Circuit ID (e.g., 013532223)"
+                className="w-full"
+              />
+              <TooltipProvider>
+                <Tooltip>
+                  <TooltipTrigger>
+                    <HelpCircle className="h-4 w-4 text-muted-foreground" />
+                  </TooltipTrigger>
+                  <TooltipContent className="w-64 p-2">
+                    <p className="font-medium mb-1">Circuit Identifier</p>
+                    <p className="text-xs sm:text-sm text-muted-foreground">
+                      Your circuit ID can be found on your PG&E bill or online account
                     </p>
                   </TooltipContent>
                 </Tooltip>

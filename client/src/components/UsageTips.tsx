@@ -1,6 +1,6 @@
 import React from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { LightbulbIcon, Info, Clock, Zap, Flame, Battery, PhoneCharging } from "lucide-react";
+import { LightbulbIcon, Info, Clock, Zap, Flame, Battery, Phone } from "lucide-react";
 import { HourlyPriceResponse } from "@shared/schema";
 import { formatHour, LOW_PRICE_THRESHOLD, HIGH_PRICE_THRESHOLD } from "@/lib/utils";
 
@@ -90,7 +90,7 @@ const UsageTips: React.FC<UsageTipsProps> = ({ priceData }) => {
             )}
             {cheapestHours[0] && (
               <li className="flex items-start">
-                <PhoneCharging className="h-4 w-4 mr-2 mt-0.5 text-blue-500 shrink-0" />
+                <Phone className="h-4 w-4 mr-2 mt-0.5 text-blue-500 shrink-0" />
                 <span>
                   Schedule high-energy tasks for {formatHour(cheapestHours[0].hour)} when rates are lowest
                 </span>

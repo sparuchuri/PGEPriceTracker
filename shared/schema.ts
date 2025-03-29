@@ -33,6 +33,13 @@ export const insertHourlyPriceSchema = createInsertSchema(hourlyPrices).pick({
   isPeak: true,
 });
 
+export const gridXParametersSchema = z.object({
+  date: z.string(),
+  rateName: z.string().default("EV2A"),
+  representativeCircuitId: z.string().default("013921103"),
+  cca: z.string().default("PCE"),
+});
+
 export const hourlyPriceResponseSchema = z.object({
   hour: z.number(),
   price: z.number(),
@@ -51,3 +58,4 @@ export type InsertHourlyPrice = z.infer<typeof insertHourlyPriceSchema>;
 export type HourlyPrice = typeof hourlyPrices.$inferSelect;
 export type HourlyPriceResponse = z.infer<typeof hourlyPriceResponseSchema>;
 export type PricingSummary = z.infer<typeof pricingSummarySchema>;
+export type GridXParameters = z.infer<typeof gridXParametersSchema>;

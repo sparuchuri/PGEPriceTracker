@@ -1,5 +1,5 @@
 import axios from 'axios';
-import { HourlyPriceResponse, hourlyPricesResponseSchema, pricingSummarySchema } from '@shared/schema';
+import { HourlyPriceResponse, hourlyPricesResponseSchema, pricingSummarySchema, GridXParameters } from '@shared/schema';
 import { isPeakHour } from '../client/src/lib/utils';
 
 // GridX API endpoint with stage prefix
@@ -141,8 +141,9 @@ const formatDateForGridXApi = (dateString: string): string => {
   return dateString.replace(/-/g, '');
 };
 
-export const fetchPricingData = async (date: string): Promise<HourlyPriceResponse[]> => {
-  const cacheKey = `pricing_${date}`;
+export const fetchPricingData = async (params: GridXParameters): Promise<HourlyPriceResponse[]> => {
+  // Create a cache key that includes all the parameters
+  const cacheKey = `pricing_${params.date}_${params.rateName}_${params.representativeCircuitId}_${params.cca}`;
 
   // Check if we have a valid cache entry
   if (cache[cacheKey] && (Date.now() - cache[cacheKey].timestamp.getTime()) < CACHE_EXPIRATION) {
@@ -151,13 +152,16 @@ export const fetchPricingData = async (date: string): Promise<HourlyPriceRespons
 
   try {
     // Format date for the API - should be in YYYYMMDD format
-    const formattedDate = formatDateForGridXApi(date);
+    const formattedDate = formatDateForGridXApi(params.date);
     
     // Set up request parameters and headers
     const requestParams = {
       ...DEFAULT_PARAMS,
       startdate: formattedDate,
-      enddate: formattedDate
+      enddate: formattedDate,
+      ratename: params.rateName,
+      representativeCircuitId: params.representativeCircuitId,
+      cca: params.cca
     };
     
     const headers = {

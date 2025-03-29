@@ -19,6 +19,8 @@ const Dashboard: React.FC = () => {
   const [selectedDate, setSelectedDate] = useState<Date>(new Date());
   const [showPeakPeriods, setShowPeakPeriods] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
+  const [ratePlan, setRatePlan] = useState<string>("EV2A");
+  const [circuitId, setCircuitId] = useState<string>("013532223");
 
   // Format date for API request
   const formattedDate = selectedDate.toISOString().split('T')[0];
@@ -30,13 +32,14 @@ const Dashboard: React.FC = () => {
     error: priceError,
     refetch: refetchPriceData
   } = useQuery<HourlyPriceResponse[]>({
-    queryKey: ['/api/pricing', formattedDate],
+    queryKey: ['/api/pricing', formattedDate, ratePlan, circuitId],
     queryFn: async () => {
-      const res = await apiRequest('GET', `/api/pricing?date=${formattedDate}`);
+      const url = `/api/pricing?date=${formattedDate}&rateName=${ratePlan}&representativeCircuitId=${circuitId}&cca=PCE`;
+      const res = await apiRequest('GET', url);
       const data = await res.json();
       return hourlyPricesResponseSchema.parse(data);
     },
-    enabled: !!formattedDate,
+    enabled: !!(formattedDate && ratePlan && circuitId),
   });
 
   // Fetch summary data
@@ -44,13 +47,14 @@ const Dashboard: React.FC = () => {
     data: summaryData,
     isLoading: isSummaryLoading
   } = useQuery<PricingSummaryType>({
-    queryKey: ['/api/pricing/summary', formattedDate],
+    queryKey: ['/api/pricing/summary', formattedDate, ratePlan, circuitId],
     queryFn: async () => {
-      const res = await apiRequest('GET', `/api/pricing/summary?date=${formattedDate}`);
+      const url = `/api/pricing/summary?date=${formattedDate}&rateName=${ratePlan}&representativeCircuitId=${circuitId}&cca=PCE`;
+      const res = await apiRequest('GET', url);
       const data = await res.json();
       return pricingSummarySchema.parse(data);
     },
-    enabled: !!formattedDate,
+    enabled: !!(formattedDate && ratePlan && circuitId),
   });
 
   // Handle errors
@@ -75,6 +79,16 @@ const Dashboard: React.FC = () => {
     setShowPeakPeriods(show);
   };
 
+  // Handle rate plan change
+  const handleRatePlanChange = (plan: string) => {
+    setRatePlan(plan);
+  };
+
+  // Handle circuit ID change
+  const handleCircuitIdChange = (id: string) => {
+    setCircuitId(id);
+  };
+
   // Handle retry
   const handleRetry = () => {
     setError(null);
@@ -95,6 +109,10 @@ const Dashboard: React.FC = () => {
           showPeakPeriods={showPeakPeriods}
           onTogglePeakPeriods={handleTogglePeakPeriods}
           lastUpdated={priceData && priceData.length > 0 ? new Date() : null}
+          ratePlan={ratePlan}
+          onRatePlanChange={handleRatePlanChange}
+          circuitId={circuitId}
+          onCircuitIdChange={handleCircuitIdChange}
         />
 
         {/* Price Alert - Show current vs next hour with recommendation */}
@@ -109,6 +127,8 @@ const Dashboard: React.FC = () => {
             <PriceChart
               priceData={priceData || []}
               showPeakPeriods={showPeakPeriods}
+              ratePlan={ratePlan}
+              circuitId={circuitId}
             />
           </div>
 
