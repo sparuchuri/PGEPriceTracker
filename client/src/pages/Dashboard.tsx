@@ -12,6 +12,7 @@ import PricingSummary from "@/components/PricingSummary";
 import UsageTips from "@/components/UsageTips";
 import LoadingIndicator from "@/components/LoadingIndicator";
 import ErrorModal from "@/components/ErrorModal";
+import PriceAlert from "@/components/PriceAlert";
 
 const Dashboard: React.FC = () => {
   // State
@@ -96,6 +97,11 @@ const Dashboard: React.FC = () => {
           lastUpdated={priceData && priceData.length > 0 ? new Date() : null}
         />
 
+        {/* Price Alert - Show current vs next hour with recommendation */}
+        {priceData && priceData.length > 0 && 
+          <PriceAlert priceData={priceData} />
+        }
+        
         {/* Responsive Layout - stacked on mobile, side-by-side on larger screens */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-6">
           {/* Chart Section - full width on mobile, 2/3 width on desktop */}
