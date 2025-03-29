@@ -1,0 +1,30 @@
+name = "pgehourly"
+main = "./server/index.ts"
+compatibility_date = "2025-03-29"
+
+[build]
+command = "npm run build"
+
+[site]
+bucket = "./client/dist"
+
+[env.production]
+workers_dev = false
+route = "pgehourly.sparuchuri.workers.dev/*"
+
+[env.development]
+workers_dev = true
+
+[vars]
+NODE_ENV = "production"
+
+# Add any KV namespaces if needed
+# [[kv_namespaces]]
+# binding = "PGE_PRICES"
+# id = "your-kv-namespace-id"
+
+# Add any D1 databases if needed
+# [[d1_databases]]
+# binding = "DB"
+# database_name = "pgehourly"
+# database_id = "your-d1-database-id"
