@@ -9,6 +9,45 @@ interface PriceChartProps {
   showPeakPeriods: boolean;
 }
 
+// This plugin will draw colored line segments
+const createColoredSegmentPlugin = (prices: number[]) => {
+  return {
+    id: 'coloredLines',
+    beforeDraw: (chart: any) => {
+      const ctx = chart.ctx;
+      const chartArea = chart.chartArea;
+      const meta = chart.getDatasetMeta(0);
+      
+      // Only proceed if we have at least 2 points
+      if (meta.data.length < 2) return;
+      
+      // Draw colored line segments
+      for (let i = 0; i < meta.data.length - 1; i++) {
+        const currentPrice = prices[i];
+        const nextPrice = prices[i + 1];
+        
+        // Use the color of the higher price point for the segment
+        const color = nextPrice > currentPrice 
+          ? getPriceColor(nextPrice) 
+          : getPriceColor(currentPrice);
+        
+        const current = meta.data[i];
+        const next = meta.data[i + 1];
+        
+        // Draw line segment
+        ctx.save();
+        ctx.beginPath();
+        ctx.moveTo(current.x, current.y);
+        ctx.lineTo(next.x, next.y);
+        ctx.lineWidth = 3;
+        ctx.strokeStyle = color;
+        ctx.stroke();
+        ctx.restore();
+      }
+    }
+  };
+};
+
 const PriceChart: React.FC<PriceChartProps> = ({ priceData, showPeakPeriods }) => {
   const chartRef = useRef<HTMLCanvasElement>(null);
   const chartInstance = useRef<Chart | null>(null);
@@ -27,78 +66,31 @@ const PriceChart: React.FC<PriceChartProps> = ({ priceData, showPeakPeriods }) =
       const backgroundColors = hours.map((hour: number) => 
         isPeakHour(hour) ? 'rgba(255, 152, 0, 0.2)' : 'rgba(25, 118, 210, 0.1)'
       );
-      
-      // Create color datasets for price ranges
-      const lowPriceData = [...prices.map((price: number, index: number) => 
-        price < LOW_PRICE_THRESHOLD ? price : null
-      )];
-      
-      const mediumPriceData = [...prices.map((price: number, index: number) => 
-        price >= LOW_PRICE_THRESHOLD && price < HIGH_PRICE_THRESHOLD ? price : null
-      )];
-      
-      const highPriceData = [...prices.map((price: number, index: number) => 
-        price >= HIGH_PRICE_THRESHOLD ? price : null
-      )];
 
       const ctx = chartRef.current.getContext('2d');
       
       if (ctx) {
-        // Create multiple datasets for different price ranges
+        // Create a single dataset for the points
         const datasets = [
-          // Main dataset with all points but invisible line for point coloring
           {
             label: 'Peninsula Clean Energy (PCE) - EV2A Rate - Circuit ID: 013921103',
             data: prices,
-            borderColor: 'transparent', // Hide the main line
-            backgroundColor: showPeakPeriods ? backgroundColors : 'hsla(var(--primary), 0.1)',
-            borderWidth: 0,
+            // Use a very light line that will be visually replaced by our custom plugin
+            borderColor: 'rgba(200, 200, 200, 0.2)',
+            backgroundColor: showPeakPeriods ? backgroundColors : 'rgba(200, 200, 200, 0.1)',
+            borderWidth: 1,
             tension: 0.2,
             pointRadius: 5,
             pointHoverRadius: 7,
             pointBackgroundColor: prices.map((price: number) => getPriceColor(price)),
             pointBorderColor: 'white',
-            pointBorderWidth: 1,
-            order: 1 // To ensure points are on top
-          },
-          // Low price segment - green
-          {
-            label: 'Low Price',
-            data: lowPriceData,
-            borderColor: 'rgba(40, 167, 69, 1)',
-            backgroundColor: 'transparent',
-            borderWidth: 3,
-            tension: 0.2,
-            pointRadius: 0,
-            fill: false,
-            order: 2
-          },
-          // Medium price segment - yellow/orange
-          {
-            label: 'Medium Price',
-            data: mediumPriceData,
-            borderColor: 'rgba(255, 193, 7, 1)',
-            backgroundColor: 'transparent',
-            borderWidth: 3,
-            tension: 0.2,
-            pointRadius: 0,
-            fill: false,
-            order: 2
-          },
-          // High price segment - red
-          {
-            label: 'High Price',
-            data: highPriceData,
-            borderColor: 'rgba(220, 53, 69, 1)',
-            backgroundColor: 'transparent',
-            borderWidth: 3,
-            tension: 0.2,
-            pointRadius: 0,
-            fill: false,
-            order: 2
+            pointBorderWidth: 1
           }
         ];
 
+        // Create a custom plugin to draw the colored line segments
+        const coloredLinePlugin = createColoredSegmentPlugin(prices);
+        
         // Create chart
         chartInstance.current = new Chart(ctx, {
           type: 'line',
@@ -173,7 +165,8 @@ const PriceChart: React.FC<PriceChartProps> = ({ priceData, showPeakPeriods }) =
                 }
               }
             }
-          }
+          },
+          plugins: [coloredLinePlugin] // Register our custom plugin
         });
       }
     }
