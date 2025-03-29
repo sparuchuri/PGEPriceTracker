@@ -1,6 +1,7 @@
 name = "pgehourly"
 main = "./server/index.ts"
 compatibility_date = "2025-03-29"
+compatibility_flags = ["nodejs_compat"]
 
 [build]
 command = "npm run build"
