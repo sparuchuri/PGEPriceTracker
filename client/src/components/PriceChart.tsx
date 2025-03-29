@@ -54,7 +54,7 @@ const PriceChart: React.FC<PriceChartProps> = ({
   priceData, 
   showPeakPeriods, 
   ratePlan = "EV2A", 
-  circuitId = "013532223" 
+  circuitId = "013921103" 
 }) => {
   const chartRef = useRef<HTMLCanvasElement>(null);
   const chartInstance = useRef<Chart | null>(null);

@@ -12,7 +12,7 @@ const DEFAULT_PARAMS = {
   ratename: 'EV2A',                     // EV2A electric vehicle rate
   program: 'CalFUSE',                   // California Flexible Unified Signal Extension
   market: 'DAM',                        // Day-Ahead Market
-  representativeCircuitId: '013532223'  // Using ID from working example
+  representativeCircuitId: '013921103'  // Default circuit ID
 };
 
 // Type for the GridX API response
