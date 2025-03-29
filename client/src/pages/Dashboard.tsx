@@ -102,19 +102,6 @@ const Dashboard: React.FC = () => {
 
       {/* Main Content */}
       <main>
-        {/* Controls Section */}
-        <ControlPanel
-          date={selectedDate}
-          onDateChange={handleDateChange}
-          showPeakPeriods={showPeakPeriods}
-          onTogglePeakPeriods={handleTogglePeakPeriods}
-          lastUpdated={priceData && priceData.length > 0 ? new Date() : null}
-          ratePlan={ratePlan}
-          onRatePlanChange={handleRatePlanChange}
-          circuitId={circuitId}
-          onCircuitIdChange={handleCircuitIdChange}
-        />
-
         {/* Price Alert - Show current vs next hour with recommendation */}
         {priceData && priceData.length > 0 && 
           <PriceAlert priceData={priceData} />
@@ -137,6 +124,21 @@ const Dashboard: React.FC = () => {
             <PricingSummary summary={pricingSummary} />
             <UsageTips priceData={priceData || []} />
           </div>
+        </div>
+        
+        {/* Controls Section - Now below the graph */}
+        <div className="mt-6">
+          <ControlPanel
+            date={selectedDate}
+            onDateChange={handleDateChange}
+            showPeakPeriods={showPeakPeriods}
+            onTogglePeakPeriods={handleTogglePeakPeriods}
+            lastUpdated={priceData && priceData.length > 0 ? new Date() : null}
+            ratePlan={ratePlan}
+            onRatePlanChange={handleRatePlanChange}
+            circuitId={circuitId}
+            onCircuitIdChange={handleCircuitIdChange}
+          />
         </div>
 
         {/* Loading Indicator */}
