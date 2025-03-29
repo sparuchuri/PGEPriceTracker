@@ -1,5 +1,5 @@
 import * as React from "react";
-import { format } from "date-fns";
+import { format, addDays } from "date-fns";
 import { Calendar as CalendarIcon } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
@@ -17,6 +17,10 @@ interface DatePickerProps {
 }
 
 export function DatePicker({ date, onDateChange, className }: DatePickerProps) {
+  // Calculate the maximum allowed date (5 days from today)
+  const today = new Date();
+  const maxDate = addDays(today, 5);
+
   return (
     <Popover>
       <PopoverTrigger asChild>
@@ -37,7 +41,9 @@ export function DatePicker({ date, onDateChange, className }: DatePickerProps) {
           mode="single"
           selected={date}
           onSelect={(newDate) => newDate && onDateChange(newDate)}
+          disabled={(day) => day > maxDate || day < today}
           initialFocus
+          footer={<p className="text-xs text-center p-2 text-muted-foreground">Date selection limited to 5 days ahead</p>}
         />
       </PopoverContent>
     </Popover>
