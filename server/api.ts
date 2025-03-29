@@ -5,12 +5,12 @@ import { isPeakHour } from '../client/src/lib/utils';
 // GridX API endpoint with stage prefix
 const GRIDX_API_URL = 'https://pge-pe-api.gridx.com/stage/v1/getPricing';
 
-// Default parameters for Peninsula Clean Energy based on working example
+// Default parameters for Peninsula Clean Energy based on user requirements
 const DEFAULT_PARAMS = {
   utility: 'PGE',                       // PG&E utility 
-  cca: 'AVA',                           // Using the CCA from the working example
-  ratename: 'EV2A',                     // Using simpler rate name without the 'S' suffix
-  program: 'CalFUSE',                   // Note: uppercase "FUSE"
+  cca: 'PCE',                           // Peninsula Clean Energy (PCE)
+  ratename: 'EV2A',                     // EV2A electric vehicle rate
+  program: 'CalFUSE',                   // California Flexible Unified Signal Extension
   market: 'DAM',                        // Day-Ahead Market
   representativeCircuitId: '013532223'  // Using ID from working example
 };
@@ -160,73 +160,127 @@ export const fetchPricingData = async (date: string): Promise<HourlyPriceRespons
     
     // Try making an API request
     try {
-      console.log(`Making API request to ${GRIDX_API_URL} for date ${formattedDate}`);
+      // Log the exact URL and parameters being used
+      const requestParams = {
+        ...DEFAULT_PARAMS,
+        startdate: formattedDate,  // Using the correct parameter name
+        enddate: formattedDate     // Same date for start and end to get a single day
+      };
+      
+      console.log(`Making API request to ${GRIDX_API_URL} with params:`, requestParams);
       
       const response = await axios.get<GridXApiResponse>(GRIDX_API_URL, {
-        params: {
-          ...DEFAULT_PARAMS,
-          startdate: formattedDate,  // Using the correct parameter name
-          enddate: formattedDate     // Same date for start and end to get a single day
-        },
+        params: requestParams,
         headers,
-        timeout: 5000 // 5 second timeout
+        timeout: 10000 // 10 second timeout - increased for reliability
       });
       
       console.log('API response status:', response.status);
+      console.log('API response data structure:', JSON.stringify(Object.keys(response.data || {}), null, 2));
       
       // Extract pricing data from response - handle the new complex structure
       let hourlyPrices: HourlyPriceResponse[] = [];
       
-      // Check if the response contains data in the expected format
-      if (response.data && response.data.data && Array.isArray(response.data.data) && response.data.data.length > 0) {
-        console.log('Found data in GridX API response');
+      // Check if the response contains any data
+      if (response.data) {
+        console.log('Received API response. Analyzing structure...');
         
-        // Attempt to extract pricing info from the new API format
-        try {
-          // Extract all pricing intervals from all days in the response
-          const allIntervals: any[] = [];
+        // Check for different possible response formats
+        let foundData = false;
+        
+        // First, try the complex nested structure
+        if (response.data.data && Array.isArray(response.data.data) && response.data.data.length > 0) {
+          console.log('Found "data" array in GridX API response');
           
-          // Navigate through the nested structure to find intervals
-          response.data.data.forEach(dataItem => {
-            if (dataItem.pricingInfo && Array.isArray(dataItem.pricingInfo)) {
-              dataItem.pricingInfo.forEach(pricingInfo => {
-                if (pricingInfo.intervals && Array.isArray(pricingInfo.intervals)) {
-                  allIntervals.push(...pricingInfo.intervals);
-                }
-              });
-            }
-          });
+          // Print the structure of the first data item to help debug
+          if (response.data.data[0]) {
+            console.log('First data item keys:', Object.keys(response.data.data[0]));
+          }
           
-          console.log(`Found ${allIntervals.length} pricing intervals in API response`);
-          
-          if (allIntervals.length > 0) {
-            hourlyPrices = allIntervals.map((interval, index) => {
-              // Parse the timestamp to extract the hour
-              const timestamp = interval.startIntervalTimeStamp;
-              let hour = index; // Default to index if we can't parse the timestamp
+          // Attempt to extract pricing info from the new API format
+          try {
+            // Extract all pricing intervals from all days in the response
+            const allIntervals: any[] = [];
+            
+            // Navigate through the nested structure to find intervals
+            response.data.data.forEach((dataItem, idx) => {
+              console.log(`Data item #${idx} has these keys:`, Object.keys(dataItem));
               
-              if (timestamp && typeof timestamp === 'string') {
-                const date = new Date(timestamp);
-                if (!isNaN(date.getTime())) {
-                  hour = date.getHours();
-                }
+              if (dataItem.pricingInfo && Array.isArray(dataItem.pricingInfo)) {
+                console.log(`Data item #${idx} has pricingInfo with ${dataItem.pricingInfo.length} entries`);
+                
+                dataItem.pricingInfo.forEach((pricingInfo, pIdx) => {
+                  console.log(`PricingInfo #${pIdx} has these keys:`, Object.keys(pricingInfo));
+                  
+                  if (pricingInfo.intervals && Array.isArray(pricingInfo.intervals)) {
+                    console.log(`PricingInfo #${pIdx} has ${pricingInfo.intervals.length} intervals`);
+                    allIntervals.push(...pricingInfo.intervals);
+                  }
+                });
               }
-              
-              // Parse the price, defaulting to a random value if not available
-              const price = interval.intervalPrice ? parseFloat(interval.intervalPrice) : Math.random() * 0.3;
-              
-              return {
-                hour,
-                price,
-                isPeak: isPeakHour(hour)
-              };
             });
             
-            console.log(`Successfully extracted ${hourlyPrices.length} hours of pricing data from API`);
+            console.log(`Found ${allIntervals.length} pricing intervals in API response`);
+            
+            if (allIntervals.length > 0) {
+              // Print a sample interval to understand the structure
+              console.log('Sample interval structure:', JSON.stringify(allIntervals[0], null, 2));
+              
+              hourlyPrices = allIntervals.map((interval, index) => {
+                // Parse the timestamp to extract the hour
+                const timestamp = interval.startIntervalTimeStamp;
+                let hour = index; // Default to index if we can't parse the timestamp
+                
+                if (timestamp && typeof timestamp === 'string') {
+                  const date = new Date(timestamp);
+                  if (!isNaN(date.getTime())) {
+                    hour = date.getHours();
+                    console.log(`Parsed timestamp ${timestamp} to hour ${hour}`);
+                  } else {
+                    console.log(`Failed to parse timestamp: ${timestamp}`);
+                  }
+                }
+                
+                // Parse the price, defaulting to a reasonable value if not available
+                const price = interval.intervalPrice ? parseFloat(interval.intervalPrice) : 0.25;
+                
+                return {
+                  hour,
+                  price,
+                  isPeak: isPeakHour(hour)
+                };
+              });
+              
+              console.log(`Successfully extracted ${hourlyPrices.length} hours of pricing data from API`);
+              foundData = true;
+            }
+          } catch (parseError) {
+            console.error('Error parsing API response:', parseError);
           }
-        } catch (parseError) {
-          console.error('Error parsing API response:', parseError);
         }
+        
+        // Try other possible response formats if needed
+        if (!foundData && response.data.pricing && Array.isArray(response.data.pricing)) {
+          console.log('Found legacy "pricing" array format in response');
+          try {
+            hourlyPrices = response.data.pricing.map(item => ({
+              hour: item.hour || 0,
+              price: item.price || 0,
+              isPeak: isPeakHour(item.hour || 0)
+            }));
+            foundData = true;
+          } catch (e) {
+            console.error('Error parsing legacy pricing format:', e);
+          }
+        }
+        
+        // If all else fails, dump the response structure for debugging
+        if (!foundData) {
+          console.log('Could not identify pricing data in the response structure.');
+          console.log('Full response structure:', JSON.stringify(response.data, null, 2).substring(0, 1000) + '...');
+        }
+      } else {
+        console.log('API response did not contain any data');
       }
       
       // If we successfully extracted pricing data
