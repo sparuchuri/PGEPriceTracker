@@ -150,172 +150,132 @@ export const fetchPricingData = async (date: string): Promise<HourlyPriceRespons
   }
 
   try {
-    // Set up headers for the request
-    const headers: Record<string, string> = {
+    // Format date for the API - should be in YYYYMMDD format
+    const formattedDate = formatDateForGridXApi(date);
+    
+    // Set up request parameters and headers
+    const requestParams = {
+      ...DEFAULT_PARAMS,
+      startdate: formattedDate,
+      enddate: formattedDate
+    };
+    
+    const headers = {
       'Accept': 'application/json'
     };
     
-    // Format dates for the API - startdate and enddate should be in YYYYMMDD format
-    const formattedDate = formatDateForGridXApi(date);
+    console.log(`Making API request to ${GRIDX_API_URL} with params:`, requestParams);
     
-    // Try making an API request
-    try {
-      // Log the exact URL and parameters being used
-      const requestParams = {
-        ...DEFAULT_PARAMS,
-        startdate: formattedDate,  // Using the correct parameter name
-        enddate: formattedDate     // Same date for start and end to get a single day
-      };
+    // Make the API request
+    const response = await axios.get<GridXApiResponse>(GRIDX_API_URL, {
+      params: requestParams,
+      headers,
+      timeout: 10000 // 10 second timeout for reliability
+    });
+    
+    console.log('API response received with status:', response.status);
+    
+    // Initialize hourlyPrices array
+    let hourlyPrices: HourlyPriceResponse[] = [];
+    
+    // Check if response contains data array
+    if (response.data && response.data.data && Array.isArray(response.data.data) && response.data.data.length > 0) {
+      console.log('Found data array in response');
       
-      console.log(`Making API request to ${GRIDX_API_URL} with params:`, requestParams);
-      
-      const response = await axios.get<GridXApiResponse>(GRIDX_API_URL, {
-        params: requestParams,
-        headers,
-        timeout: 10000 // 10 second timeout - increased for reliability
-      });
-      
-      console.log('API response status:', response.status);
-      console.log('API response data structure:', JSON.stringify(Object.keys(response.data || {}), null, 2));
-      
-      // Extract pricing data from response - handle the new complex structure
-      let hourlyPrices: HourlyPriceResponse[] = [];
-      
-      // Check if the response contains any data
-      if (response.data) {
-        console.log('Received API response. Analyzing structure...');
+      // Check for priceDetails in the first data item
+      const dataItem = response.data.data[0];
+      if (dataItem && dataItem.priceDetails && Array.isArray(dataItem.priceDetails)) {
+        console.log(`Found priceDetails array with ${dataItem.priceDetails.length} entries`);
         
-        // New PCE API format detection - looking for priceDetails in data array
-        if (response.data.data && Array.isArray(response.data.data) && response.data.data.length > 0) {
-          console.log('Found "data" array in GridX API response');
+        // Map each price detail to our HourlyPriceResponse format
+        hourlyPrices = dataItem.priceDetails.map((detail: any) => {
+          // Extract hour from timestamp (format is "2025-03-29T00:00:00-0700")
+          let hour = 0;
           
-          // Print the structure of the first data item to help debug
-          if (response.data.data[0]) {
-            console.log('First data item keys:', Object.keys(response.data.data[0]));
-            
-            // Check if we have priceDetails (this is the new format based on logs)
-            const dataItem = response.data.data[0];
-            if (dataItem.priceDetails && Array.isArray(dataItem.priceDetails)) {
-              console.log(`Found priceDetails array with ${dataItem.priceDetails.length} entries`);
-              
-              // Print a sample price detail to see its structure
-              if (dataItem.priceDetails.length > 0) {
-                console.log('Sample price detail:', JSON.stringify(dataItem.priceDetails[0], null, 2));
-                
-                // Map the priceDetails directly to hourly prices
-                const priceDetails = dataItem.priceDetails;
-                hourlyPrices = priceDetails.map((detail: any) => {
-                  // Parse the timestamp to extract the hour
-                  let hour = 0;
-                  if (detail.startIntervalTimeStamp && typeof detail.startIntervalTimeStamp === 'string') {
-                    const date = new Date(detail.startIntervalTimeStamp);
-                    if (!isNaN(date.getTime())) {
-                      hour = date.getHours();
-                      console.log(`Parsed timestamp ${detail.startIntervalTimeStamp} to hour ${hour}`);
-                    }
-                  }
-                  
-                  // Parse the price as a float
-                  const price = parseFloat(detail.intervalPrice || '0');
-                  
-                  return {
-                    hour,
-                    price,
-                    isPeak: isPeakHour(hour)
-                  };
-                });
-                
-                console.log(`Successfully extracted ${hourlyPrices.length} hours of pricing data from API`);
-                
-                // If we have pricing data but less than 24 hours, log a warning
-                if (hourlyPrices.length > 0 && hourlyPrices.length < 24) {
-                  console.log(`Warning: Only found ${hourlyPrices.length} hours of data instead of expected 24 hours`);
-                }
-                
-                return; // Exit early since we found the data
-              }
+          if (detail.startIntervalTimeStamp) {
+            const timestamp = detail.startIntervalTimeStamp;
+            const timePart = timestamp.split('T')[1];
+            if (timePart) {
+              hour = parseInt(timePart.split(':')[0], 10);
             }
           }
-        }
+          
+          // Parse price from intervalPrice
+          const price = parseFloat(detail.intervalPrice || '0');
+          
+          return {
+            hour,
+            price,
+            isPeak: isPeakHour(hour)
+          };
+        });
         
-        // If we get here, we couldn't find the expected format, so dump the full response for debugging
-        console.log('Could not identify pricing data in the expected format.');
-        // Stringify with indentation for better readability but limit the size
-        const fullResponseStr = JSON.stringify(response.data, null, 2);
-        // Log the full response for detailed analysis
-        console.log('Full API response:', fullResponseStr.length > 4000 ? 
-          fullResponseStr.substring(0, 4000) + '...' : fullResponseStr);
-      } else {
-        console.log('API response did not contain any data');
-      }
-      
-      // If we successfully extracted pricing data
-      if (hourlyPrices.length > 0) {
-        // Sort by hour
-        hourlyPrices.sort((a, b) => a.hour - b.hour);
+        console.log(`Extracted ${hourlyPrices.length} price data points`);
         
-        // Make sure we have exactly 24 hours by filling in any missing hours
-        const completeHourlyPrices: HourlyPriceResponse[] = [];
-        for (let hour = 0; hour < 24; hour++) {
-          const existingEntry = hourlyPrices.find(entry => entry.hour === hour);
-          if (existingEntry) {
-            completeHourlyPrices.push(existingEntry);
-          } else {
-            // If we're missing an hour, interpolate or use a reasonable default
-            const prevHour = hourlyPrices.find(entry => entry.hour < hour);
-            const nextHour = hourlyPrices.find(entry => entry.hour > hour);
-            let price;
-            
-            if (prevHour && nextHour) {
-              // Interpolate between previous and next hours
-              price = prevHour.price + (nextHour.price - prevHour.price) / (nextHour.hour - prevHour.hour) * (hour - prevHour.hour);
-            } else if (prevHour) {
-              price = prevHour.price;
-            } else if (nextHour) {
-              price = nextHour.price;
+        // If we have data, process it
+        if (hourlyPrices.length > 0) {
+          // Ensure we have 24 hours of data
+          const completeData: HourlyPriceResponse[] = [];
+          
+          // Fill in any missing hours
+          for (let h = 0; h < 24; h++) {
+            const entry = hourlyPrices.find(p => p.hour === h);
+            if (entry) {
+              completeData.push(entry);
             } else {
-              // Fallback to a reasonable default based on time of day
-              price = isPeakHour(hour) ? 0.35 : 0.20;
+              console.log(`Filling in missing hour: ${h}`);
+              // Find closest hours for interpolation
+              const before = [...hourlyPrices].filter(p => p.hour < h).sort((a, b) => b.hour - a.hour)[0];
+              const after = [...hourlyPrices].filter(p => p.hour > h).sort((a, b) => a.hour - b.hour)[0];
+              
+              let price = 0;
+              if (before && after) {
+                // Interpolate between before and after
+                price = before.price + ((after.price - before.price) / (after.hour - before.hour)) * (h - before.hour);
+              } else if (before) {
+                price = before.price;
+              } else if (after) {
+                price = after.price;
+              } else {
+                price = 0.01; // Fallback price if no reference points
+              }
+              
+              completeData.push({
+                hour: h,
+                price,
+                isPeak: isPeakHour(h)
+              });
             }
-            
-            completeHourlyPrices.push({
-              hour,
-              price,
-              isPeak: isPeakHour(hour)
-            });
           }
+          
+          // Sort by hour
+          completeData.sort((a, b) => a.hour - b.hour);
+          
+          console.log('Successfully prepared 24 hours of pricing data');
+          
+          // Validate and cache the data
+          const validatedData = hourlyPricesResponseSchema.parse(completeData);
+          cache[cacheKey] = {
+            data: validatedData,
+            timestamp: new Date()
+          };
+          
+          return validatedData;
         }
-        
-        // Validate response
-        const validatedData = hourlyPricesResponseSchema.parse(completeHourlyPrices);
-        
-        // Store in cache
-        cache[cacheKey] = {
-          data: validatedData,
-          timestamp: new Date()
-        };
-        
-        return validatedData;
       } else {
-        console.log('Could not extract pricing data from API response. Response structure:', 
-          JSON.stringify(Object.keys(response.data), null, 2));
+        console.log('No priceDetails found in data item');
       }
-    } catch (apiError: any) {
-      // Log API error but continue to fallback method
-      if (axios.isAxiosError(apiError)) {
-        console.log(`API request failed with status ${apiError.response?.status}:`, 
-          apiError.response?.data || apiError.message);
-      } else {
-        console.log('API request failed:', apiError);
-      }
+    } else {
+      console.log('No data array found in response');
     }
     
-    // We're not using generated data anymore - throw an error so we can see what's happening
-    console.log('API request failed to return usable data');
-    throw new Error('Could not fetch valid pricing data from the API');
+    // If we got here, we couldn't extract the data correctly
+    console.error('Failed to extract price data from response');
+    throw new Error('Could not extract valid pricing data from the API response');
+    
   } catch (error) {
-    console.error('Error in fetchPricingData:', error);
-    throw new Error('Failed to fetch or generate pricing data');
+    console.error('Error fetching pricing data:', error);
+    throw new Error('Failed to fetch pricing data from the API');
   }
 };
 
