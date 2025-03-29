@@ -5,9 +5,6 @@ compatibility_date = "2025-03-29"
 [build]
 command = "npm run build"
 
-[site]
-bucket = "./client/dist"
-
 # Alternative assets configuration
 [assets]
 directory = "./client/dist"
