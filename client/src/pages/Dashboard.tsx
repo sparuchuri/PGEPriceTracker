@@ -20,7 +20,7 @@ const Dashboard: React.FC = () => {
   const [showPeakPeriods, setShowPeakPeriods] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
   const [ratePlan, setRatePlan] = useState<string>("EV2A");
-  const [circuitId, setCircuitId] = useState<string>("013532223");
+  const [circuitId, setCircuitId] = useState<string>("013921103");
 
   // Format date for API request
   const formattedDate = selectedDate.toISOString().split('T')[0];
