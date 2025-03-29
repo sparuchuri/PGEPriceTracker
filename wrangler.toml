@@ -8,6 +8,10 @@ command = "npm run build"
 [site]
 bucket = "./client/dist"
 
+# Alternative assets configuration
+[assets]
+directory = "./client/dist"
+
 [env.production]
 workers_dev = false
 route = "pgehourly.sparuchuri.workers.dev/*"
