@@ -7,10 +7,11 @@ const GRIDX_API_URL = 'https://pge-pe-api.gridx.com/v1/getPricing';
 
 // Default parameters for Peninsula Clean Energy
 const DEFAULT_PARAMS = {
-  utility: 'PCE', // Try both parameter formats since API documentation may be outdated
-  CCA: 'PCE',
-  program: 'EV2AS',
+  utility: 'PGE',   // PG&E utility 
+  CCA: 'PCE',       // Peninsula Clean Energy
   rateName: 'EV2AS',
+  program: 'CalFuse',
+  market: 'DAM',    // Day-Ahead Market
   representativeCircuitID: '013921103'
 };
 
