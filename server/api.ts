@@ -185,100 +185,66 @@ export const fetchPricingData = async (date: string): Promise<HourlyPriceRespons
       if (response.data) {
         console.log('Received API response. Analyzing structure...');
         
-        // Check for different possible response formats
-        let foundData = false;
-        
-        // First, try the complex nested structure
+        // New PCE API format detection - looking for priceDetails in data array
         if (response.data.data && Array.isArray(response.data.data) && response.data.data.length > 0) {
           console.log('Found "data" array in GridX API response');
           
           // Print the structure of the first data item to help debug
           if (response.data.data[0]) {
             console.log('First data item keys:', Object.keys(response.data.data[0]));
-          }
-          
-          // Attempt to extract pricing info from the new API format
-          try {
-            // Extract all pricing intervals from all days in the response
-            const allIntervals: any[] = [];
             
-            // Navigate through the nested structure to find intervals
-            response.data.data.forEach((dataItem, idx) => {
-              console.log(`Data item #${idx} has these keys:`, Object.keys(dataItem));
+            // Check if we have priceDetails (this is the new format based on logs)
+            const dataItem = response.data.data[0];
+            if (dataItem.priceDetails && Array.isArray(dataItem.priceDetails)) {
+              console.log(`Found priceDetails array with ${dataItem.priceDetails.length} entries`);
               
-              if (dataItem.pricingInfo && Array.isArray(dataItem.pricingInfo)) {
-                console.log(`Data item #${idx} has pricingInfo with ${dataItem.pricingInfo.length} entries`);
+              // Print a sample price detail to see its structure
+              if (dataItem.priceDetails.length > 0) {
+                console.log('Sample price detail:', JSON.stringify(dataItem.priceDetails[0], null, 2));
                 
-                dataItem.pricingInfo.forEach((pricingInfo, pIdx) => {
-                  console.log(`PricingInfo #${pIdx} has these keys:`, Object.keys(pricingInfo));
+                // Map the priceDetails directly to hourly prices
+                const priceDetails = dataItem.priceDetails;
+                hourlyPrices = priceDetails.map((detail: any) => {
+                  // Parse the timestamp to extract the hour
+                  let hour = 0;
+                  if (detail.startIntervalTimeStamp && typeof detail.startIntervalTimeStamp === 'string') {
+                    const date = new Date(detail.startIntervalTimeStamp);
+                    if (!isNaN(date.getTime())) {
+                      hour = date.getHours();
+                      console.log(`Parsed timestamp ${detail.startIntervalTimeStamp} to hour ${hour}`);
+                    }
+                  }
                   
-                  if (pricingInfo.intervals && Array.isArray(pricingInfo.intervals)) {
-                    console.log(`PricingInfo #${pIdx} has ${pricingInfo.intervals.length} intervals`);
-                    allIntervals.push(...pricingInfo.intervals);
-                  }
+                  // Parse the price as a float
+                  const price = parseFloat(detail.intervalPrice || '0');
+                  
+                  return {
+                    hour,
+                    price,
+                    isPeak: isPeakHour(hour)
+                  };
                 });
-              }
-            });
-            
-            console.log(`Found ${allIntervals.length} pricing intervals in API response`);
-            
-            if (allIntervals.length > 0) {
-              // Print a sample interval to understand the structure
-              console.log('Sample interval structure:', JSON.stringify(allIntervals[0], null, 2));
-              
-              hourlyPrices = allIntervals.map((interval, index) => {
-                // Parse the timestamp to extract the hour
-                const timestamp = interval.startIntervalTimeStamp;
-                let hour = index; // Default to index if we can't parse the timestamp
                 
-                if (timestamp && typeof timestamp === 'string') {
-                  const date = new Date(timestamp);
-                  if (!isNaN(date.getTime())) {
-                    hour = date.getHours();
-                    console.log(`Parsed timestamp ${timestamp} to hour ${hour}`);
-                  } else {
-                    console.log(`Failed to parse timestamp: ${timestamp}`);
-                  }
+                console.log(`Successfully extracted ${hourlyPrices.length} hours of pricing data from API`);
+                
+                // If we have pricing data but less than 24 hours, log a warning
+                if (hourlyPrices.length > 0 && hourlyPrices.length < 24) {
+                  console.log(`Warning: Only found ${hourlyPrices.length} hours of data instead of expected 24 hours`);
                 }
                 
-                // Parse the price, defaulting to a reasonable value if not available
-                const price = interval.intervalPrice ? parseFloat(interval.intervalPrice) : 0.25;
-                
-                return {
-                  hour,
-                  price,
-                  isPeak: isPeakHour(hour)
-                };
-              });
-              
-              console.log(`Successfully extracted ${hourlyPrices.length} hours of pricing data from API`);
-              foundData = true;
+                return; // Exit early since we found the data
+              }
             }
-          } catch (parseError) {
-            console.error('Error parsing API response:', parseError);
           }
         }
         
-        // Try other possible response formats if needed
-        if (!foundData && response.data.pricing && Array.isArray(response.data.pricing)) {
-          console.log('Found legacy "pricing" array format in response');
-          try {
-            hourlyPrices = response.data.pricing.map(item => ({
-              hour: item.hour || 0,
-              price: item.price || 0,
-              isPeak: isPeakHour(item.hour || 0)
-            }));
-            foundData = true;
-          } catch (e) {
-            console.error('Error parsing legacy pricing format:', e);
-          }
-        }
-        
-        // If all else fails, dump the response structure for debugging
-        if (!foundData) {
-          console.log('Could not identify pricing data in the response structure.');
-          console.log('Full response structure:', JSON.stringify(response.data, null, 2).substring(0, 1000) + '...');
-        }
+        // If we get here, we couldn't find the expected format, so dump the full response for debugging
+        console.log('Could not identify pricing data in the expected format.');
+        // Stringify with indentation for better readability but limit the size
+        const fullResponseStr = JSON.stringify(response.data, null, 2);
+        // Log the full response for detailed analysis
+        console.log('Full API response:', fullResponseStr.length > 4000 ? 
+          fullResponseStr.substring(0, 4000) + '...' : fullResponseStr);
       } else {
         console.log('API response did not contain any data');
       }
@@ -344,17 +310,9 @@ export const fetchPricingData = async (date: string): Promise<HourlyPriceRespons
       }
     }
     
-    // If API request failed or returned invalid data, generate data
-    console.log('Using generated pricing data for visualization');
-    const generatedData = generatePricingData(date);
-    
-    // Store in cache
-    cache[cacheKey] = {
-      data: generatedData,
-      timestamp: new Date()
-    };
-    
-    return generatedData;
+    // We're not using generated data anymore - throw an error so we can see what's happening
+    console.log('API request failed to return usable data');
+    throw new Error('Could not fetch valid pricing data from the API');
   } catch (error) {
     console.error('Error in fetchPricingData:', error);
     throw new Error('Failed to fetch or generate pricing data');
