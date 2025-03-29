@@ -9,6 +9,28 @@ export function cn(...inputs: ClassValue[]) {
 // Define peak hours (4pm-9pm, or 16-20 in 24hr format)
 export const isPeakHour = (hour: number): boolean => hour >= 16 && hour <= 20;
 
+// Price thresholds for color coding (in dollars per kWh)
+export const LOW_PRICE_THRESHOLD = 0.02;   // 2 cents
+export const HIGH_PRICE_THRESHOLD = 0.06;  // 6 cents
+
+// Get color based on price
+export const getPriceColor = (price: number): string => {
+  if (price < LOW_PRICE_THRESHOLD) {
+    return 'rgba(40, 167, 69, 1)';  // Green for low prices
+  } else if (price >= HIGH_PRICE_THRESHOLD) {
+    return 'rgba(220, 53, 69, 1)';  // Red for high prices
+  } else {
+    // Calculate a gradual transition from green to yellow to red
+    if (price < (LOW_PRICE_THRESHOLD + HIGH_PRICE_THRESHOLD) / 2) {
+      // Between green and yellow
+      return 'rgba(255, 193, 7, 1)';  // Yellow for medium prices
+    } else {
+      // Between yellow and red
+      return 'rgba(253, 126, 20, 1)';  // Orange for medium-high prices
+    }
+  }
+};
+
 // Format price for display with dollar sign and 3 decimal places
 export const formatPrice = (price: number): string => {
   return `$${price.toFixed(3)}`;

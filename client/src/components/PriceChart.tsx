@@ -2,34 +2,12 @@ import React, { useEffect, useRef } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import Chart from "chart.js/auto";
 import { HourlyPriceResponse } from "@shared/schema";
-import { formatPrice, isPeakHour } from "@/lib/utils";
+import { formatPrice, isPeakHour, getPriceColor, LOW_PRICE_THRESHOLD, HIGH_PRICE_THRESHOLD } from "@/lib/utils";
 
 interface PriceChartProps {
   priceData: HourlyPriceResponse[];
   showPeakPeriods: boolean;
 }
-
-// Price thresholds for color coding (in dollars per kWh)
-const LOW_PRICE_THRESHOLD = 0.02;   // 2 cents
-const HIGH_PRICE_THRESHOLD = 0.06;  // 6 cents
-
-// Line color based on price
-const getLineColor = (price: number): string => {
-  if (price < LOW_PRICE_THRESHOLD) {
-    return 'rgba(40, 167, 69, 1)';  // Green for low prices
-  } else if (price >= HIGH_PRICE_THRESHOLD) {
-    return 'rgba(220, 53, 69, 1)';  // Red for high prices
-  } else {
-    // Calculate a gradual transition from green to yellow to red
-    if (price < (LOW_PRICE_THRESHOLD + HIGH_PRICE_THRESHOLD) / 2) {
-      // Between green and yellow
-      return 'rgba(255, 193, 7, 1)';  // Yellow for medium prices
-    } else {
-      // Between yellow and red
-      return 'rgba(253, 126, 20, 1)';  // Orange for medium-high prices
-    }
-  }
-};
 
 const PriceChart: React.FC<PriceChartProps> = ({ priceData, showPeakPeriods }) => {
   const chartRef = useRef<HTMLCanvasElement>(null);
@@ -42,31 +20,82 @@ const PriceChart: React.FC<PriceChartProps> = ({ priceData, showPeakPeriods }) =
         chartInstance.current.destroy();
       }
 
-      const hours = priceData.map(item => item.hour);
-      const prices = priceData.map(item => item.price);
+      const hours = priceData.map((item: HourlyPriceResponse) => item.hour);
+      const prices = priceData.map((item: HourlyPriceResponse) => item.price);
       
       // Define peak and off-peak background colors
-      const backgroundColors = hours.map(hour => 
+      const backgroundColors = hours.map((hour: number) => 
         isPeakHour(hour) ? 'rgba(255, 152, 0, 0.2)' : 'rgba(25, 118, 210, 0.1)'
       );
+      
+      // Create color datasets for price ranges
+      const lowPriceData = [...prices.map((price: number, index: number) => 
+        price < LOW_PRICE_THRESHOLD ? price : null
+      )];
+      
+      const mediumPriceData = [...prices.map((price: number, index: number) => 
+        price >= LOW_PRICE_THRESHOLD && price < HIGH_PRICE_THRESHOLD ? price : null
+      )];
+      
+      const highPriceData = [...prices.map((price: number, index: number) => 
+        price >= HIGH_PRICE_THRESHOLD ? price : null
+      )];
 
       const ctx = chartRef.current.getContext('2d');
       
       if (ctx) {
-        // Create datasets for main data points
+        // Create multiple datasets for different price ranges
         const datasets = [
+          // Main dataset with all points but invisible line for point coloring
           {
             label: 'Peninsula Clean Energy (PCE) - EV2A Rate - Circuit ID: 013921103',
             data: prices,
-            borderColor: 'rgba(0, 0, 0, 0.5)', // Base color for the line
+            borderColor: 'transparent', // Hide the main line
             backgroundColor: showPeakPeriods ? backgroundColors : 'hsla(var(--primary), 0.1)',
-            borderWidth: 3,
+            borderWidth: 0,
             tension: 0.2,
             pointRadius: 5,
             pointHoverRadius: 7,
-            pointBackgroundColor: prices.map(price => getLineColor(price)),
+            pointBackgroundColor: prices.map((price: number) => getPriceColor(price)),
             pointBorderColor: 'white',
-            pointBorderWidth: 1
+            pointBorderWidth: 1,
+            order: 1 // To ensure points are on top
+          },
+          // Low price segment - green
+          {
+            label: 'Low Price',
+            data: lowPriceData,
+            borderColor: 'rgba(40, 167, 69, 1)',
+            backgroundColor: 'transparent',
+            borderWidth: 3,
+            tension: 0.2,
+            pointRadius: 0,
+            fill: false,
+            order: 2
+          },
+          // Medium price segment - yellow/orange
+          {
+            label: 'Medium Price',
+            data: mediumPriceData,
+            borderColor: 'rgba(255, 193, 7, 1)',
+            backgroundColor: 'transparent',
+            borderWidth: 3,
+            tension: 0.2,
+            pointRadius: 0,
+            fill: false,
+            order: 2
+          },
+          // High price segment - red
+          {
+            label: 'High Price',
+            data: highPriceData,
+            borderColor: 'rgba(220, 53, 69, 1)',
+            backgroundColor: 'transparent',
+            borderWidth: 3,
+            tension: 0.2,
+            pointRadius: 0,
+            fill: false,
+            order: 2
           }
         ];
 
