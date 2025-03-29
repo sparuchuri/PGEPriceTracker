@@ -7,7 +7,7 @@ command = "npm run build"
 
 # Alternative assets configuration
 [assets]
-directory = "./client/dist"
+directory = "./dist"
 
 [env.production]
 workers_dev = false
