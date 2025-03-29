@@ -2,17 +2,17 @@ import axios from 'axios';
 import { HourlyPriceResponse, hourlyPricesResponseSchema, pricingSummarySchema } from '@shared/schema';
 import { isPeakHour } from '../client/src/lib/utils';
 
-// GridX API endpoint
-const GRIDX_API_URL = 'https://pge-pe-api.gridx.com/v1/getPricing';
+// GridX API endpoint with stage prefix
+const GRIDX_API_URL = 'https://pge-pe-api.gridx.com/stage/v1/getPricing';
 
-// Default parameters for Peninsula Clean Energy
+// Default parameters for Peninsula Clean Energy based on working example
 const DEFAULT_PARAMS = {
-  utility: 'PGE',   // PG&E utility 
-  CCA: 'PCE',       // Peninsula Clean Energy
-  rateName: 'EV2AS',
-  program: 'CalFuse',
-  market: 'DAM',    // Day-Ahead Market
-  representativeCircuitID: '013921103'
+  utility: 'PGE',                       // PG&E utility 
+  cca: 'PCE',                           // Peninsula Clean Energy
+  ratename: 'EV2AS',                    // Note: lowercase parameter name
+  program: 'CalFUSE',                   // Note: uppercase "FUSE"
+  market: 'DAM',                        // Day-Ahead Market
+  representativeCircuitId: '013532223'  // Using ID from working example
 };
 
 // Type for the GridX API response
@@ -114,6 +114,13 @@ const generatePricingData = (date: string): HourlyPriceResponse[] => {
   return hourlyPricesResponseSchema.parse(pricingData);
 };
 
+/**
+ * Converts a date string in ISO format (YYYY-MM-DD) to the format required by the GridX API (YYYYMMDD)
+ */
+const formatDateForGridXApi = (dateString: string): string => {
+  return dateString.replace(/-/g, '');
+};
+
 export const fetchPricingData = async (date: string): Promise<HourlyPriceResponse[]> => {
   const cacheKey = `pricing_${date}`;
 
@@ -128,22 +135,30 @@ export const fetchPricingData = async (date: string): Promise<HourlyPriceRespons
       'Accept': 'application/json'
     };
     
+    // Format dates for the API - startdate and enddate should be in YYYYMMDD format
+    const formattedDate = formatDateForGridXApi(date);
+    
     // Try making an API request
     try {
+      console.log(`Making API request to ${GRIDX_API_URL} for date ${formattedDate}`);
+      
       const response = await axios.get<GridXApiResponse>(GRIDX_API_URL, {
         params: {
           ...DEFAULT_PARAMS,
-          date
+          startdate: formattedDate,  // Using the correct parameter name
+          enddate: formattedDate     // Same date for start and end to get a single day
         },
         headers,
-        timeout: 3000 // 3 second timeout to fail fast if API is not responsive
+        timeout: 5000 // 5 second timeout
       });
+      
+      console.log('API response status:', response.status);
       
       // Extract pricing data from response
       let pricingArray = response.data.pricing || [];
       
       // If pricing is not directly in response.data, check if it's in response.data.data
-      if (!pricingArray && response.data.data?.pricing) {
+      if ((!pricingArray || pricingArray.length === 0) && response.data.data?.pricing) {
         pricingArray = response.data.data.pricing;
       }
       
@@ -168,10 +183,17 @@ export const fetchPricingData = async (date: string): Promise<HourlyPriceRespons
         };
         
         return validatedData;
+      } else {
+        console.log('API response did not contain pricing data array. Response:', JSON.stringify(response.data, null, 2));
       }
-    } catch (apiError) {
+    } catch (apiError: any) {
       // Log API error but continue to fallback method
-      console.log('API request failed, using generated data instead:', apiError);
+      if (axios.isAxiosError(apiError)) {
+        console.log(`API request failed with status ${apiError.response?.status}:`, 
+          apiError.response?.data || apiError.message);
+      } else {
+        console.log('API request failed:', apiError);
+      }
     }
     
     // If API request failed or returned invalid data, generate data
