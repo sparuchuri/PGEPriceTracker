@@ -5,6 +5,7 @@ compatibility_flags = ["nodejs_compat"]
 
 [build]
 command = "npm run build"
+format = "esm"
 
 # Alternative assets configuration
 [assets]
