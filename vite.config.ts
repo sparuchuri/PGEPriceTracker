@@ -10,14 +10,17 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
 
 export default defineConfig({
-  plugins: [cloudflare()],
+  plugins: [
+    react(),
+    cloudflare()
+  ],
   build: {
     target: 'esnext',
-    outDir: 'dist',
+    outDir: "dist",
     rollupOptions: {
       output: {
-        format: 'esm'
+        format: "esm"
       }
     }
   }
-})
+});
