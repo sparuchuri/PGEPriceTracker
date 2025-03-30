@@ -14,8 +14,12 @@ run = ["sh", "-c", "cd client && npm run preview"]
 localPort = 5000
 externalPort = 80
 
+[[ports]]
+localPort = 5175
+externalPort = 3000
+
 [workflows]
-runButton = "Start Client"
+runButton = "Dev Server"
 
 [[workflows.workflow]]
 name = "Project"
@@ -45,6 +49,19 @@ waitForPort = 5000
 name = "Start Client"
 author = 40975882
 mode = "sequential"
+
+[[workflows.workflow.tasks]]
+task = "shell.exec"
+args = "cd client && npm run dev"
+
+[[workflows.workflow]]
+name = "Dev Server"
+author = 40975882
+mode = "parallel"
+
+[[workflows.workflow.tasks]]
+task = "shell.exec"
+args = "npm run dev"
 
 [[workflows.workflow.tasks]]
 task = "shell.exec"
