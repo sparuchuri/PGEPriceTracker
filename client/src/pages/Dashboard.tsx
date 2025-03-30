@@ -2,7 +2,8 @@ import React, { useState, useEffect } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/queryClient";
 import { HourlyPriceResponse, hourlyPricesResponseSchema, PricingSummary as PricingSummaryType, pricingSummarySchema } from "@shared/schema";
-import { getTodayDate, calculatePricingSummary, parseErrorMessage } from "@/lib/utils";
+import { getTodayDate, parseErrorMessage } from "@/lib/utils";
+import { fetchPricingData, calculatePricingSummary } from "@/services/gridXService";
 
 // Components
 import Header from "@/components/Header";
