@@ -5,9 +5,9 @@
   "type": "module",
   "license": "MIT",
   "scripts": {
-    "dev": "cd client && npm install && npm run dev",
-    "build": "cd client && npm install && npm run build",
-    "preview": "cd client && npm run preview",
+    "dev": "cd client && vite",
+    "build": "cd client && vite build",
+    "preview": "cd client && vite preview",
     "check": "tsc"
   },
   "dependencies": {
