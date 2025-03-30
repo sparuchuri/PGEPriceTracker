@@ -1,11 +1,12 @@
+
 {
   "name": "rest-express",
   "version": "1.0.0",
   "type": "module",
   "license": "MIT",
   "scripts": {
-    "dev": "cd client && npm run dev",
-    "build": "cd client && npm run build",
+    "dev": "cd client && npm install && npm run dev",
+    "build": "cd client && npm install && npm run build",
     "preview": "cd client && npm run preview",
     "check": "tsc"
   },
