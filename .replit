@@ -22,7 +22,12 @@ externalPort = 5173
 localPort = 5174
 externalPort = 3000
 
+[[ports]]
+localPort = 5175
+externalPort = 3001
+
 [workflows]
+runButton = "Start Client"
 
 [[workflows.workflow]]
 name = "Project"
