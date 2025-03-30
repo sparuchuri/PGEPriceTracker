@@ -19,11 +19,12 @@ export default defineConfig({
   },
   server: {
     port: 5000,
-    host: true,
-    strictPort: true,
-    hmr: {
-      clientPort: 443,
-      host: process.env.REPL_SLUG + '.' + process.env.REPL_OWNER + '.repl.co'
+    host: '0.0.0.0',
+    proxy: {
+      '/api': {
+        target: 'http://localhost:3000',
+        changeOrigin: true,
+      }
     }
-  },
+  }
 });
