@@ -57,6 +57,10 @@ mode = "parallel"
 
 [[workflows.workflow.tasks]]
 task = "shell.exec"
+args = "cd server && npx tsx index.ts"
+
+[[workflows.workflow.tasks]]
+task = "shell.exec"
 args = "cd client && npm run dev"
 
 [[workflows.workflow]]
