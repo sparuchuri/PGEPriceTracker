@@ -32,30 +32,14 @@ const Dashboard: React.FC = () => {
     error: priceError,
     refetch: refetchPriceData
   } = useQuery<HourlyPriceResponse[]>({
-    queryKey: ['/api/pricing', formattedDate, ratePlan, circuitId],
-    queryFn: async () => {
-      const url = `/api/pricing?date=${formattedDate}&rateName=${ratePlan}&representativeCircuitId=${circuitId}&cca=PCE`;
-      const res = await apiRequest('GET', url);
-      const data = await res.json();
-      return hourlyPricesResponseSchema.parse(data);
-    },
+    queryKey: ['pricing', formattedDate, ratePlan, circuitId],
+    queryFn: () => fetchPricingData(formattedDate, ratePlan, circuitId),
     enabled: !!(formattedDate && ratePlan && circuitId),
   });
 
   // Fetch summary data
-  const { 
-    data: summaryData,
-    isLoading: isSummaryLoading
-  } = useQuery<PricingSummaryType>({
-    queryKey: ['/api/pricing/summary', formattedDate, ratePlan, circuitId],
-    queryFn: async () => {
-      const url = `/api/pricing/summary?date=${formattedDate}&rateName=${ratePlan}&representativeCircuitId=${circuitId}&cca=PCE`;
-      const res = await apiRequest('GET', url);
-      const data = await res.json();
-      return pricingSummarySchema.parse(data);
-    },
-    enabled: !!(formattedDate && ratePlan && circuitId),
-  });
+  const summaryData = priceData ? calculatePricingSummary(priceData) : undefined;
+  const isSummaryLoading = isPriceLoading;
 
   // Handle errors
   useEffect(() => {
