@@ -14,12 +14,7 @@ run = ["sh", "-c", "cd client && npm run preview"]
 localPort = 5000
 externalPort = 80
 
-[[ports]]
-localPort = 5174
-externalPort = 3000
-
 [workflows]
-runButton = "Dev"
 
 [[workflows.workflow]]
 name = "Project"
