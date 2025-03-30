@@ -2,9 +2,15 @@
 import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react';
 import path from 'path';
+import themePlugin from "@replit/vite-plugin-shadcn-theme-json";
+import runtimeErrorOverlay from "@replit/vite-plugin-runtime-error-modal";
 
 export default defineConfig({
-  plugins: [react()],
+  plugins: [
+    react(),
+    runtimeErrorOverlay(),
+    themePlugin()
+  ],
   resolve: {
     alias: {
       '@': path.resolve(__dirname, './src'),
@@ -12,9 +18,12 @@ export default defineConfig({
     },
   },
   server: {
-    host: '0.0.0.0',
-    port: 5173,
-    strictPort: false,
-    allowedHosts: 'all'
+    port: 5000,
+    host: true,
+    strictPort: true,
+    hmr: {
+      clientPort: 443,
+      host: process.env.REPL_SLUG + '.' + process.env.REPL_OWNER + '.repl.co'
+    }
   },
 });
