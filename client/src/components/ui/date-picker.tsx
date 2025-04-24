@@ -41,7 +41,11 @@ export function DatePicker({ date, onDateChange, className }: DatePickerProps) {
           mode="single"
           selected={date}
           onSelect={(newDate) => newDate && onDateChange(newDate)}
-          disabled={(day) => day > maxDate || day < today}
+          disabled={(day) => {
+            const todayStart = new Date();
+            todayStart.setHours(0, 0, 0, 0);
+            return day > maxDate || day < todayStart;
+          }}
           initialFocus
           footer={<p className="text-xs text-center p-2 text-muted-foreground">Date selection limited to 5 days ahead</p>}
         />
