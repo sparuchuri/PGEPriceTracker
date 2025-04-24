@@ -6,52 +6,58 @@ import { HourlyPriceResponse } from "@shared/schema";
 
 interface PriceAlertProps {
   priceData: HourlyPriceResponse[];
+  selectedDate?: Date;
 }
 
-const PriceAlert: React.FC<PriceAlertProps> = ({ priceData }) => {
+const PriceAlert: React.FC<PriceAlertProps> = ({ priceData, selectedDate }) => {
   // Return early if no price data
   if (!priceData || priceData.length === 0) {
     return null;
   }
 
+  // Check if we're viewing today's date by comparing dates
+  const isToday = selectedDate ? 
+    selectedDate.toDateString() === new Date().toDateString() : 
+    false;
+  
   // Get current hour
   const now = new Date();
   const currentHour = now.getHours();
   
   // Find current hour's price data
   const currentPriceData = priceData.find(item => item.hour === currentHour);
-  if (!currentPriceData) return null;
-  
-  // Find next hour's price data
   const nextHour = (currentHour + 1) % 24;
   const nextPriceData = priceData.find(item => item.hour === nextHour);
-  if (!nextPriceData) return null;
+  
+  if (!currentPriceData || !nextPriceData) return null;
   
   // Calculate price difference
   const priceDifference = nextPriceData.price - currentPriceData.price;
   const absoluteDifference = Math.abs(priceDifference);
   const percentChange = (priceDifference / currentPriceData.price) * 100;
   
-  // Determine recommendation
+  // Determine recommendation (only for today)
   let recommendation = null;
   let variant = "default";
   
-  if (priceDifference <= -0.01) {
-    recommendation = (
-      <div className="flex items-center gap-1 text-green-600 font-medium">
-        <TrendingDown className="h-4 w-4" />
-        <span>Recommendation: Wait until {nextHour}:00 to save {formatPrice(absoluteDifference)} per kWh</span>
-      </div>
-    );
-    variant = "default";
-  } else if (priceDifference >= 0.01) {
-    recommendation = (
-      <div className="flex items-center gap-1 text-amber-600 font-medium">
-        <Zap className="h-4 w-4" />
-        <span>Recommendation: Use electricity now before prices increase by {formatPrice(absoluteDifference)} per kWh</span>
-      </div>
-    );
-    variant = "warning";
+  if (isToday) {
+    if (priceDifference <= -0.01) {
+      recommendation = (
+        <div className="flex items-center gap-1 text-green-600 font-medium">
+          <TrendingDown className="h-4 w-4" />
+          <span>Recommendation: Wait until {nextHour}:00 to save {formatPrice(absoluteDifference)} per kWh</span>
+        </div>
+      );
+      variant = "default";
+    } else if (priceDifference >= 0.01) {
+      recommendation = (
+        <div className="flex items-center gap-1 text-amber-600 font-medium">
+          <Zap className="h-4 w-4" />
+          <span>Recommendation: Use electricity now before prices increase by {formatPrice(absoluteDifference)} per kWh</span>
+        </div>
+      );
+      variant = "warning";
+    }
   }
 
   return (
@@ -60,7 +66,7 @@ const PriceAlert: React.FC<PriceAlertProps> = ({ priceData }) => {
         <div>
           <AlertTitle className="text-base flex items-center">
             <Clock className="h-4 w-4 mr-2" />
-            Current Price ({currentHour}:00 - {(currentHour + 1) % 24}:00)
+            Current Price ({currentHour}:00 - {nextHour}:00)
           </AlertTitle>
           <AlertDescription className="text-lg font-semibold text-primary">
             {formatPrice(currentPriceData.price)} per kWh

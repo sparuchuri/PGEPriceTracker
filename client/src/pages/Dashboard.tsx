@@ -17,7 +17,11 @@ import PriceAlert from "@/components/PriceAlert";
 
 const Dashboard: React.FC = () => {
   // State
-  const [selectedDate, setSelectedDate] = useState<Date>(new Date());
+  const [selectedDate, setSelectedDate] = useState<Date>(() => {
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    return today;
+  });
   const [showPeakPeriods, setShowPeakPeriods] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
   const [ratePlan, setRatePlan] = useState<string>("EV2A");
@@ -89,7 +93,7 @@ const Dashboard: React.FC = () => {
       <main>
         {/* Price Alert - Show current vs next hour with recommendation */}
         {priceData && priceData.length > 0 && 
-          <PriceAlert priceData={priceData} />
+          <PriceAlert priceData={priceData} selectedDate={selectedDate} />
         }
         
         {/* Responsive Layout - stacked on mobile, side-by-side on larger screens */}
